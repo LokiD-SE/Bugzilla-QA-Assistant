@@ -1,0 +1,128 @@
+#bugFixTemplateButton {
+    padding: 5px 15px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #4CAF50;
+    color: white;
+    cursor: pointer;
+    margin-left: 20px;
+    display: inline-block;
+    text-align: center;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 900; 
+}
+
+#bugFixTemplateButton:hover {
+    background-color: #45a049;
+}
+
+#bugFixTemplateButton:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: #3d8b40;
+}
+
+#bugFixTemplateButton.disabled {
+    background-color: #cccccc;
+    color: #666666;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+#comment_tabs {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px 0;
+}
+
+#comment_tabs .comment_tab.active_comment_tab {
+    background-color: #007bff;
+    color: white;
+}
+
+#bugFixTemplateButton {
+    flex-shrink: 0;
+}
+#bugFixTextBox {
+    padding: 5px 5px;
+    font-size: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 900;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: white;
+    color: black;
+    margin-left: 5px;
+    display: inline-block;
+    text-align: center;
+    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    cursor: text;
+}
+
+/* Hover & Focus match button behavior */
+#bugFixTextBox:hover,
+#bugFixTextBox:focus {
+    background-color: #e0e0e0;
+    outline: none;
+}
+
+/* Active-like feedback when typing */
+#bugFixTextBox:active {
+    transform: scale(0.95);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    background-color: white;
+}
+
+/* Disabled state similar to button */
+#bugFixTextBox:disabled {
+    background-color: #e0e0e0;
+    color: #666666;
+    cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+}
+.bug-Fix-Toggle {
+  display: none;
+}
+
+/* Toggle container (label) */
+.bug-Fix-Toggle-label {
+  display: inline-block;
+  width: 30px;
+  height: 16px;
+  background-color: #ccc;
+  border-radius: 16px;
+  position: relative;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  vertical-align: middle;
+}
+
+/* Inner circle */
+.bug-Fix-Toggle-label::after {
+  content: '';
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  width: 14px;
+  height: 14px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.3s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+/* When checked, move circle and change background */
+.bug-Fix-Toggle:checked + .bug-Fix-Toggle-label {
+  background-color: #4CAF50;
+}
+
+.bug-Fix-Toggle:checked + .bug-Fix-Toggle-label::after {
+  transform: translateX(14px);
+}
