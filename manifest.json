@@ -1,0 +1,38 @@
+{
+    "name": "AI Bug Template",
+    "version": "1.3.1",
+    "description": "Automatically prefills the text area with the respective bug fix details with AI support.",
+    "permissions": [
+    "activeTab",
+    "storage"
+  ],
+    "host_permissions": ["https://bugzilla.bizom.in/*"],
+    "content_scripts": [
+      {
+        "matches": ["https://bugzilla.bizom.in/*"],
+         "js": ["/modules/prefill-action/contentScript.js"],
+         "css": ["/modules/prefill-action/contentScript.css"],
+         "run_at": "document_end"
+      }
+    ],
+    "web_accessible_resources": [
+      {
+        "resources": [
+          "assets/app-icon/ic_app_16.png",
+          "assets/app-icon/ic_app_24.png",
+          "assets/app-icon/ic_app_32.png"
+        ],
+        "matches": ["https://bugzilla.bizom.in/*"]
+      }
+    ],
+    "action": {
+      "default_icon": {
+        "16": "assets/app-icon/ic_app_16.png",
+        "24": "assets/app-icon/ic_app_24.png",
+        "32": "assets/app-icon/ic_app_32.png"
+      },
+      "default_title": "Improvised Bug Fix Template",
+      "default_popup": "/modules/popup/popup.html"
+    },
+    "manifest_version": 3
+  }
