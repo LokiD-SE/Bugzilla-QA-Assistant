@@ -5,7 +5,6 @@
         const params = new URLSearchParams(window.location.search);
         return params.get('id') || 'No ID found';
     }
-
     function injectBugFixTemplateButton() {
         const bugPageTitle = document.querySelector('#title').innerText;
         const date = new Date();
