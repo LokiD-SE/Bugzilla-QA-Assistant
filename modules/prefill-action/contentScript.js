@@ -184,6 +184,8 @@
                                   Guidelines:
                                   - Do NOT alter or rename any headings (e.g., **Bug Summary**, **Environment Details:**).
                                   - Keep section spacing and layout exactly as shown.
+                                  - Add Positive Case and Negative Case under each section from the bug summary.
+                                  - Positive Case and Negative Case should start with "Verify that or check that".
                                   - Add related information to all the headings and generate information for each heading.
                                   - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
@@ -504,45 +506,43 @@
                             }
                           return;
                         }
-                       if (selected.value == "bugWiki") {
-                        let comments = document.querySelectorAll(".bz_comment_text");
-                        let commentTexts = Array.from(comments).map(c => c.innerText);
-                        let combinedText = commentTexts.join(" ");
-                        let wikiUrls = new Set();
+                        if (selected.value == "bugWiki") {
+                            let comments = document.querySelectorAll(".bz_comment_text");
+                            let commentTexts = Array.from(comments).map(c => c.innerText);
+                            let combinedText = commentTexts.join(" ");
+                            let wikiUrls = new Set(); // Changed 'url' to 'wikiUrls' to avoid conflict
 
-                        commentTexts.forEach(text => {
-                          let matches = text.match(/https?:\/\/[^\s]+/g);
-                          if (matches) {
-                            matches.forEach(url => {
-                              try {
-                                let cleanUrl = new URL(url);
+                            commentTexts.forEach(text => {
+                                let matches = text.match(/https?:\/\/[^\s]+/g);
+                                console.log(matches);
+                                if (matches) {
+                                    matches.forEach(url => { // 'url' here is the string from the match
+                                    try {
+                                        let cleanUrl = new URL(url);
 
-                                // Only include URLs that contain "wiki" and match the specific path pattern
-                                if (
-                                  cleanUrl.hostname.includes("wiki") &&
-                                  /^\/index\.php\/[A-Za-z0-9_%-]+$/.test(cleanUrl.pathname)
-                                ) {
-                                  wikiUrls.add(cleanUrl.href);
+                                        // Check if the hostname includes "wiki"
+                                        if (cleanUrl.hostname.includes("wiki")) {
+                                            wikiUrls.add(cleanUrl.href);
+                                        }
+                                        }
+                                     catch {
+                                            // ignore invalid URLs
+                                        }
+                                    });
                                 }
-                              } catch {
-                                // ignore invalid URLs
-                              }
                             });
-                          }
-                        });
 
-                        let formattedUrls = Array.from(wikiUrls).join("\n");
+                            let formattedUrls = Array.from(wikiUrls).join("\n");
+                            console.log(formattedUrls);
 
-
-                           if(formattedUrls!=null)
-                           {
-                               textArea.value = `Hi Team,\n\nI have reviewed the wiki page for this implementation and confirmed it is up-to-date, accurate, and includes helpful screenshots.\n\nWiki Link:\n${formattedUrls}\n\nMarking this ticket as Reviewed, Please Contact me for any Queries`;
-                           } else {
-                               console.log("No wiki.bizom URLs found in the comments.");
-                               textArea.value = `Hi Team,\n\nI have reviewed the wiki page for this implementation and confirmed it is up-to-date, accurate, and includes helpful screenshots.\n\nWiki Link:\n\n\nMarking this ticket as Reviewed, Please Contact me for any Queries`;
-                           }
-                           return;
-                       }
+                            if (formattedUrls) { // The check should be for a truthy value, which an empty string is not
+                                textArea.value = `Hi Team,\n\nI have reviewed the wiki page for this implementation and confirmed it is up-to-date, accurate, and includes helpful screenshots.\n\nWiki Link:\n${formattedUrls}\n\nMarking this ticket as Reviewed, Please Contact me for any Queries`;
+                            } else {
+                                console.log("No wiki.bizom URLs found in the comments.");
+                                textArea.value = `Hi Team,\n\nI have reviewed the wiki page for this implementation and confirmed it is up-to-date, accurate, and includes helpful screenshots.\n\nWiki Link:\n\n\nMarking this ticket as Reviewed, Please Contact me for any Queries`;
+                            }
+                            return;
+                        }
                         if (selected.value=="bugFixTemplate") {
                             try {
                                 const credentials = btoa(`${username}:${token}`);
