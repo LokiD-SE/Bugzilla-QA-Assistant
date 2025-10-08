@@ -217,6 +217,7 @@
                                   Admin:
                                   User:
                                   Branch/version:
+                                  Clone Approval : Yes | NA
 
                                   ** Steps to Reproduce **
 
