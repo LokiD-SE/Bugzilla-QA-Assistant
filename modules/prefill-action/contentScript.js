@@ -28,6 +28,7 @@
                 // Add options to the select dropdown
                 const options = [
                     { value: 'bugTemplateSelector', text: 'Select template' },
+                    { value: 'bugReporting', text: 'Reporting' },
                     { value: 'bugFixTemplate', text: 'Bug Fix' },
                     { value: 'bugCompanyUpdate', text: 'Company Update' },
                     { value: 'bugReleaseTemplate', text: 'Release' },
@@ -145,7 +146,7 @@
                                   Now generate the summary using the above format with guidelines and the following input variables:
                                   ${text}`;
                                   }
-                                  else
+                                  else if (Prompt === "bugVerification")
                                   {
                                   geminiPrompt = `Please generate a human-friendly summary based on the given input text. Follow the exact format structure provided below. Do NOT change the section headings, spacing, or structure. Update only the content under each heading in a simple and easy-to-understand language.
 
@@ -189,6 +190,64 @@
                                   - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.”
+
+                                  Now generate the summary using the above format with guidelines and the following input variables:
+                                  ${text}`;
+                                  }
+                                  else
+                                  {
+                                  geminiPrompt = `Please generate a human-friendly summary based on the given input text. Follow the exact format structure provided below. Do NOT change the section headings, spacing, or structure. Update only the content under each heading in a simple and easy-to-understand language.
+
+                                    Use the following format based on the Data provided by the "format" below.
+
+                                  ---
+
+                                  **use this format:**
+
+                                  Hi Team,
+
+                                  ** Description **
+
+                                  ** Overview **
+
+
+                                  ** Environment Details **
+                                  URL:
+                                  Admin:
+                                  User:
+                                  Branch/version:
+
+                                  ** Steps to Reproduce **
+
+                                  ** Actual Result (As Observed): **
+
+                                  ** Expected Result (As Reported): **
+
+                                  ** Build Date & Hardware: **
+
+                                  ** Additional Builds and Platforms: **
+
+                                  ** Additional Information: **
+
+
+                                  Please contact me for any queries.
+
+                                  ---
+
+                                  Guidelines:
+                                  - Do NOT alter or rename any headings (e.g., ** Steps to Reproduce **, ** Expected Result (As Reported): **).
+                                  - Description Heading should have the one liner of the bug that is reported.
+                                  - Keep section spacing and layout exactly as shown.
+                                  - Add related information to all the headings and generate information for each heading.
+                                  - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
+                                  - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
+                                  - Always start with “Hi Team,” and end with “Please contact me for any queries.
+                                  - Overview: More detailed restatement of summary
+                                  - Steps to Reproduce: Minimized, easy-to-follow steps that will trigger the bug. Include any special setup steps
+                                  - Build Date & Hardware: Date and hardware of the build in which you first encountered the bug
+                                  - Additional Builds and Platforms: Whether or not the bug takes place on other platforms (or browsers, if applicable)
+                                  - Additional Information: Any other useful information.
+                                  - Leave a section empty if no relevant data is provided”
 
                                   Now generate the summary using the above format with guidelines and the following input variables:
                                   ${text}`;
@@ -489,6 +548,115 @@
                             if(isAiEnabled == false)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugVerification").then(summary => {
+                                if (summary !== null){
+                                textArea.value = summary;
+                                }
+                                else{
+                                textArea.value = format;
+                                }
+                              }).catch(err => {
+                                console.error("Error generating summary:", err);
+                                textArea.value = format;
+                              });
+                            }
+                            else{
+                            textArea.value = format;
+                            }
+                          return;
+                        }
+                        if (selected.value === "bugReporting") {
+                            // === START: Updated selection logic (This is the correct approach) ===
+                            // Select both the #comment and #short_desc elements by their IDs.
+                            const shortDescElement = document.querySelector('#short_desc');
+                            const commentElement = document.querySelector('#comment');
+
+                            const shortDescValue = shortDescElement ? shortDescElement.value : '';
+                            const commentValue = commentElement ? commentElement.value : '';
+
+                            // Create an array of texts from both inputs to be processed for URL and Step extraction.
+                            // This correctly collects both values without overwriting.
+                            const commentTexts = [shortDescValue, commentValue].filter(text => text.trim() !== '');
+
+                            // combinedText is the initial text passed to the AI model.
+                            let combinedText = commentTexts.join(' ');
+                            // === END: Updated selection logic ===
+
+                            let prompt = selected.value;
+
+                            const prodUrls = new Set();
+                            const backupUrls = new Set();
+                            const stagingUrls = new Set();
+
+                            // === Extract URLs ===
+                            commentTexts.forEach(text => {
+                                const matches = text.match(/https?:\/\/[^\s]+/g);
+                                if (!matches) return;
+
+                                matches.forEach(url => {
+                                    try {
+                                        const cleanUrl = new URL(url);
+                                        const baseUrl = cleanUrl.origin + '/';
+                                        const host = cleanUrl.hostname;
+
+                                        if (/^[a-z0-9-]+\.bizom\.[a-z.]+$/i.test(host)) {
+                                            prodUrls.add(baseUrl);
+                                            const subdomain = host.split('.')[0];
+                                            const tld = host.split(".slice(2).join('.')");
+                                            const stagingUrl = `${cleanUrl.protocol}//staging${subdomain}.bizomstaging.${tld}/`;
+                                            stagingUrls.add(stagingUrl);
+                                        } else if (/^backupexperience\.bizombackup\.[a-z.]+$/i.test(host)) {
+                                            backupUrls.add(baseUrl);
+                                        }
+                                    } catch {
+                                        // skip invalid URLs
+                                    }
+                                });
+                            });
+
+                            const formattedUrls = [
+                                ...prodUrls,
+                                ...backupUrls,
+                                ...stagingUrls
+                            ].join('\n');
+
+                            // === Extract Steps ===
+                            const allSteps = [];
+
+                            commentTexts.forEach(text => {
+                                const lines = text.split('\n');
+                                let steps = [];
+                                let collecting = false;
+
+                                for (let line of lines) {
+                                    line = line.trim();
+                                    if (line.toLowerCase().includes("steps to reproduce")) {
+                                        collecting = true;
+                                        continue;
+                                    }
+                                    if (collecting && (line.startsWith("**") || line.toLowerCase().startsWith("expected result"))) {
+                                        break;
+                                    }
+                                    if (collecting && line && !line.startsWith("**")) {
+                                        steps.push(line);
+                                    }
+                                }
+
+                                if (steps.length > 0) {
+                                    allSteps.push(...steps);
+                                }
+                            });
+
+                            // === Merge all data into combinedText for the AI prompt ===
+                            // We add newlines for clear separation between the original text, URLs, and steps.
+                            combinedText += "\n\n--- Extracted URLs ---\n" + formattedUrls;
+                            combinedText += "\n\n--- Extracted Steps ---\n" + allSteps.join('\n');
+                            console.log(combinedText);
+                            console.log(formattedUrls);
+                            // === Generate Summary & Set TextArea ===
+                            format = `Hi Team,\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Description **\n${summary}\n\n** Overview **\n\n** Steps to Reproduce **\n\n** Actual Result (As Observed): **\n\n** Expected Result (As Reported): **\n\n** Build Date & Hardware: **\n\n** Additional Builds and Platforms: **\n\n** Additional Information: **\n\n\nPlease contact me for any queries.`;
+                            if(isAiEnabled == false)
+                            {
+                              generateAISummary(format, combinedText, apiKey, formattedUrls, "bugReporting").then(summary => {
                                 if (summary !== null){
                                 textArea.value = summary;
                                 }
