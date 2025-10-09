@@ -185,7 +185,8 @@
                                   - Do NOT alter or rename any headings (e.g., **Bug Summary**, **Environment Details:**).
                                   - Keep section spacing and layout exactly as shown.
                                   - Add Positive Case and Negative Case under each section from the bug summary.
-                                  - Positive Case and Negative Case should start with "Verify that or check that".
+                                  - Positive Case and Negative Case should start with "Verify that or check that" in one line.
+                                  - Steps To Reproduce should have minimized, easy-to-follow steps that will trigger the bug. Include any special setup steps
                                   - Add related information to all the headings and generate information for each heading.
                                   - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
