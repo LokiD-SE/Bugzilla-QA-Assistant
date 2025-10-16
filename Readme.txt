@@ -13,6 +13,9 @@ Version 1.3.2
 - Added DOM safety checks to prevent errors when elements are missing
 - Enhanced error handling and user feedback
 - Token input field automatically shows/hides based on AI toggle state
+- Steps to Verify bug fix and all other fields are now populating properly
+- Added Reporting Template for Creating new bugs.
+- Resolved issues in Needs Info Template and Removed "Please Raise a New Ticket if issue persists".
 
 Version 1.3.1
 - AI summary and content generation for confirmation and bugfix templates
@@ -44,14 +47,17 @@ Version 1.2.0
 
 1. Clone or download this repository:
    ```bash
-   git clone https://github.com/yourusername/your-extension.git
-Open Chrome and navigate to chrome://extensions/
+   git clone https://github.com/LokiD-SE/Bugzilla-QA-Assistant.git
 
-Enable Developer Mode (top right corner)
+OR Download from Drive link - https://drive.google.com/drive/folders/1okO4Hb_4YX4q-co5wMdO6Z4AD-aeqtWK?usp=drive_link
 
-Click Load unpacked
+2.Open Chrome and navigate to chrome://extensions/
 
-Select the root directory of this extension
+3. Enable Developer Mode (top right corner)
+
+4. Click Load unpacked
+
+5. Select the root directory of this extension Example
 
 ## Usage
 
