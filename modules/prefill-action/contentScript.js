@@ -139,7 +139,7 @@
                                   - Do NOT alter or rename any headings (e.g., ** Steps to Reproduce **, ** Expected Result (As Reported): **).
                                   - Keep section spacing and layout exactly as shown.
                                   - Add related information to all the headings and generate information for each heading.
-                                  - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
+                                  - Always include URL credentials and branch/version under "Environment Details".
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.”
 
@@ -184,12 +184,12 @@
                                   Guidelines:
                                   - Do NOT alter or rename any headings (e.g., **Bug Summary**, **Environment Details:**).
                                   - Keep section spacing and layout exactly as shown.
-                                  - Add Positive Case and Negative Case under each section from the bug summary.
-                                  - Positive Case and Negative Case should start with "Verify that or check that" in one line.
-                                  - Steps To Reproduce should have minimized, easy-to-follow steps that will trigger the bug. Include any special setup steps
+                                  - Generate Steps to Verify the Bug Fix from text and Include prerequisite setup steps with generated steps if present else just use the generated steps alone.
+                                  - Generate Positive Case and Negative Case from text and it should start with "Verify that or check that" in one line.
                                   - Add related information to all the headings and generate information for each heading.
-                                  - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
+                                  - Always include URL credentials and branch/version under "Environment Details".
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
+                                  - Leave the Impact on Related Areas empty.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.”
 
                                   Now generate the summary using the above format with guidelines and the following input variables:
@@ -275,7 +275,7 @@
                                           aiSections = summary;
                                       }
                                   } catch (err) {
-                                      aiSections = summary;
+                                      aiSections = format;
                                   }
                                   return aiSections;
                     }
@@ -366,7 +366,7 @@
                         }
                         if (selected.value=="bugNeedsInfo") {
                             console.log('No repository selected, please select one from the home page');
-                            textArea.value = `Hi Team,\n\nPlease follow these guidelines to give all the needed info like, branch/app version, credentials, permission to clone, and steps to reproduce with attachments to work on this bug as provided info is insufficient\n\nBug Guideline Documents:\nhttps://bugzilla.bizom.in/page.cgi?id=bug-writing.html\nhttps://docs.google.com/document/d/1-2XUnI5dWujLawjzjOagvTdKShgd2RXWwPvv8GSy3fM/edit?tab=t.0#heading=h.dm28529y3jwb\n\nHence, Marking this ticket as Needs info\n\nPlease raise new ticket if issue exists again`;
+                            textArea.value = `Hi Team,\n\nPlease follow these guidelines to give all the needed info like, branch/app version, credentials, permission to clone, and steps to reproduce with attachments to work on this bug as provided info is insufficient\n\nBug Guideline Documents:\nhttps://bugzilla.bizom.in/page.cgi?id=bug-writing.html\nhttps://docs.google.com/document/d/1-2XUnI5dWujLawjzjOagvTdKShgd2RXWwPvv8GSy3fM/edit?tab=t.0#heading=h.dm28529y3jwb\n\nHence, Marking this ticket as Needs info`;
                             return;
                         }
                         if (selected.value == "bugConfirmation") {
