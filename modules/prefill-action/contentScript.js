@@ -6,7 +6,8 @@
         return params.get('id') || 'No ID found';
     }
     function injectBugFixTemplateButton() {
-        const bugPageTitle = document.querySelector('#title').innerText;
+        const titleEl = document.querySelector('#title');
+        const bugPageTitle = titleEl ? titleEl.innerText : '';
         const date = new Date();
         const month = date.toLocaleString('default', { month: 'long' });
         const day = date.getDate();
@@ -50,16 +51,16 @@
                             bugFixTextBox.id = 'bugFixTextBox';
                             bugFixTextBox.className  = 'comment_tab';
                             bugFixTextBox.setAttribute('role', 'tab');
-                            bugFixTextBox.placeholder = 'Enter GeminiToken';
-                            bugFixTextBox.style.width = 'flex';
-                            bugFixTextBox.style.height = 'flex';
-                            bugFixTextBox.style.margin = 'flex';
+                            bugFixTextBox.placeholder = 'Enter Gemini API Key';
+                            bugFixTextBox.style.width = '220px';
+                            bugFixTextBox.style.marginLeft = '10px';
                             bugFixTextBox.style.display = 'block';
 
                 const bugFixToggle = document.createElement('input');
                 bugFixToggle.type = 'checkbox';
                 bugFixToggle.id = 'bugFixToggle';
                 bugFixToggle.className = 'bug-Fix-Toggle';
+                bugFixToggle.checked = true; // Default to AI mode enabled
 
                 // Create the toggle label (acts as the visual switch)
                 const bugFixToggleLabel = document.createElement('label');
@@ -68,10 +69,19 @@
 
                 const bugFixStatusText = document.createElement('span');
                 bugFixStatusText.id = 'bugFixStatusText';
-                bugFixStatusText.textContent = 'ManualMode'; // Default state
+                bugFixStatusText.textContent = 'AIMode'; // Default state
                 bugFixStatusText.style.marginLeft = '10px';
                 bugFixStatusText.style.fontFamily = 'Arial, sans-serif';
                 bugFixStatusText.style.fontSize = '14px';
+
+                // Sync status text and token input with toggle
+                bugFixToggle.addEventListener('change', () => {
+                    bugFixStatusText.textContent = bugFixToggle.checked ? 'AIMode' : 'ManualMode';
+                    if (bugFixTextBox) {
+                        bugFixTextBox.style.display = bugFixToggle.checked ? 'block' : 'none';
+                        bugFixTextBox.disabled = !bugFixToggle.checked;
+                    }
+                });
 
 
                 bugFixTemplateSelect.addEventListener('change', async () => {
@@ -416,7 +426,7 @@
                             } else {
                               format = `Hi Team,\n${summary}\n\n** Steps to Reproduce **\n\n** Expected Result (As Reported): **\n\n** Expected Result (As Per Testcase): **\n\n** Actual Result (As Observed by QA): **\n\n** Attachments **\n\n** Commitid/Appversion **\n\nPlease contact me for any queries`;
                             }
-                            if(isAiEnabled == false)
+                            if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText,apiKey,formattedUrls, "bugConfirmation").then(summary => {
                                 if (summary !== null){
@@ -547,7 +557,7 @@
                             else{
                             format = `Hi Team,\n\n**Bug Summary**\n${summary}\n\n**Environment Details:**\n\n**Steps to Verify the Bug Fix:**\n\n**Positive Case:**\n\n**Negative Case:**\n\n**Impact on Related Areas:**\n\n**Attachments:**\n\n**Resolution Verification Status:**\n\nPlease contact me for any queries`;
                             }
-                            if(isAiEnabled == false)
+                            if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugVerification").then(summary => {
                                 if (summary !== null){
@@ -603,7 +613,7 @@
                                         if (/^[a-z0-9-]+\.bizom\.[a-z.]+$/i.test(host)) {
                                             prodUrls.add(baseUrl);
                                             const subdomain = host.split('.')[0];
-                                            const tld = host.split(".slice(2).join('.')");
+                                            const tld = host.split('.').slice(2).join('.');
                                             const stagingUrl = `${cleanUrl.protocol}//staging${subdomain}.bizomstaging.${tld}/`;
                                             stagingUrls.add(stagingUrl);
                                         } else if (/^backupexperience\.bizombackup\.[a-z.]+$/i.test(host)) {
@@ -656,7 +666,7 @@
                             console.log(formattedUrls);
                             // === Generate Summary & Set TextArea ===
                             format = `Hi Team,\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Description **\n${summary}\n\n** Overview **\n\n** Steps to Reproduce **\n\n** Actual Result (As Observed): **\n\n** Expected Result (As Reported): **\n\n** Build Date & Hardware: **\n\n** Additional Builds and Platforms: **\n\n** Additional Information: **\n\n\nPlease contact me for any queries.`;
-                            if(isAiEnabled == false)
+                            if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugReporting").then(summary => {
                                 if (summary !== null){
@@ -758,26 +768,38 @@
                     }
                 });
                 if(bugPageTitle=='Bugzilla – Bug List'){
-                changeMultipleBugsContainer.appendChild(bugFixStatusText);
-                changeMultipleBugsContainer.appendChild(bugFixToggle);
-                changeMultipleBugsContainer.appendChild(bugFixToggleLabel);
-                changeMultipleBugsContainer.appendChild(bugFixTemplateSelect);
-                changeMultipleBugsContainer.appendChild(bugFixTextBox);
+                if (changeMultipleBugsContainer) {
+                    changeMultipleBugsContainer.appendChild(bugFixStatusText);
+                    changeMultipleBugsContainer.appendChild(bugFixToggle);
+                    changeMultipleBugsContainer.appendChild(bugFixToggleLabel);
+                    changeMultipleBugsContainer.appendChild(bugFixTemplateSelect);
+                    changeMultipleBugsContainer.appendChild(bugFixTextBox);
+                } else {
+                    console.log('#flags container not found');
+                }
 
                 }
                 else if(bugPageTitle=='Bugzilla – Enter Bug: BizomWeb'||bugPageTitle=='Bugzilla – Enter Bug: Mobile App'){
-                container.appendChild(bugFixStatusText);
-                container.appendChild(bugFixToggle);
-                container.appendChild(bugFixToggleLabel);
-                container.appendChild(bugFixTemplateSelect);
-                container.appendChild(bugFixTextBox);
+                if (container) {
+                    container.appendChild(bugFixStatusText);
+                    container.appendChild(bugFixToggle);
+                    container.appendChild(bugFixToggleLabel);
+                    container.appendChild(bugFixTemplateSelect);
+                    container.appendChild(bugFixTextBox);
+                } else {
+                    console.log('#comment_tabs container not found');
+                }
                 }
                 else{
-                container.appendChild(bugFixStatusText);
-                container.appendChild(bugFixToggle);
-                container.appendChild(bugFixToggleLabel);
-                container.appendChild(bugFixTemplateSelect);
-                container.appendChild(bugFixTextBox);
+                if (container) {
+                    container.appendChild(bugFixStatusText);
+                    container.appendChild(bugFixToggle);
+                    container.appendChild(bugFixToggleLabel);
+                    container.appendChild(bugFixTemplateSelect);
+                    container.appendChild(bugFixTextBox);
+                } else {
+                    console.log('#comment_tabs container not found');
+                }
                 }
 
                 console.log('Bug Fix Template button injected. Extracted Bug ID:', getBugIdFromUrl());
