@@ -242,7 +242,7 @@
                                   - Description Heading should have the one liner of the bug that is reported.
                                   - Keep section spacing and layout exactly as shown.
                                   - Add related information to all the headings and generate information for each heading.
-                                  - Always include URL credentials and branch/version under "Environment Details" when using the verification and confirmation format.
+                                  - Always include URL credentials and branch/version under "Environment Details".
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.
                                   - Overview: More detailed restatement of summary
@@ -272,7 +272,7 @@
                                           const geminiData = await geminiResp.json();
                                           aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
                                       } else {
-                                          aiSections = summary;
+                                          aiSections = format;
                                       }
                                   } catch (err) {
                                       aiSections = format;
@@ -416,7 +416,6 @@
                             } else {
                               format = `Hi Team,\n${summary}\n\n** Steps to Reproduce **\n\n** Expected Result (As Reported): **\n\n** Expected Result (As Per Testcase): **\n\n** Actual Result (As Observed by QA): **\n\n** Attachments **\n\n** Commitid/Appversion **\n\nPlease contact me for any queries`;
                             }
-                            console.log(format);
                             if(isAiEnabled == false)
                             {
                               generateAISummary(format, combinedText,apiKey,formattedUrls, "bugConfirmation").then(summary => {
