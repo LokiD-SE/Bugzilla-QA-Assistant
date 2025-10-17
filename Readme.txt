@@ -6,6 +6,16 @@ Bug Fix Template is a Chrome extension that enhances your productivity by provid
 
 ## Features
 Version 1.3.2
+- **Complete Modern Design System**: Implemented glassmorphism effects across all screens
+- **Enhanced Home Screen**: Added modern gradient backgrounds, improved typography, and interactive repository selection
+- **Upgraded Popup Interface**: Contemporary design with gradient text effects and smooth animations
+- **Modernized Setup Screen**: Enhanced form styling with focus states, hover effects, and improved input design
+- **Redesigned Content Script**: Updated button styling, modern toggle switches, and consistent interaction patterns
+- **Success Message Styling**: Added animated success indicators with checkmark icons and fade-in effects
+- **Consistent Color Scheme**: Unified purple theme (#D0CFF2, #B6A5BD, #0F0013) across all modules
+- **Smooth Animations**: Implemented cubic-bezier easing functions and shimmer effects
+- **Improved Accessibility**: Better contrast ratios and interactive feedback states
+- **Responsive Design**: Optimized layouts with proper spacing and modern border radius
 - AI mode enabled by default with improved toggle behavior
 - Enhanced UI with status indicator showing "AIMode" or "ManualMode"
 - Improved token input field with better styling and visibility controls
@@ -58,6 +68,68 @@ OR Download from Drive link - https://drive.google.com/drive/folders/1okO4Hb_4YX
 4. Click Load unpacked
 
 5. Select the root directory of this extension Example
+
+## UI/UX Improvements (Version 1.3.2)
+
+### 🎨 Modern Design System
+The extension has been completely redesigned with a contemporary look and feel:
+
+#### **Glassmorphism Effects**
+- Semi-transparent backgrounds with backdrop blur effects
+- Layered shadows for depth and dimension
+- Subtle gradient overlays for visual appeal
+
+#### **Enhanced Typography**
+- Improved font weights and letter spacing
+- Gradient text effects on titles and headings
+- Better text shadows for improved readability
+- Consistent JetBrains Mono font family across all modules
+
+#### **Interactive Elements**
+- Smooth hover animations with cubic-bezier easing
+- Shimmer effects on button interactions
+- Transform animations for tactile feedback
+- Focus states with glowing borders
+
+#### **Color Scheme**
+- **Primary**: #D0CFF2 (Light Purple)
+- **Secondary**: #B6A5BD (Medium Purple)
+- **Background**: #0F0013 (Dark Purple)
+- **Success**: #4CAF50 (Green for actions)
+- **Accent**: Semi-transparent overlays for depth
+
+### 📱 Screen-Specific Improvements
+
+#### **Home Screen (`home.css`)**
+- Glassmorphism container with blur effects
+- Modern repository selection with hover states
+- Enhanced button styling with gradient backgrounds
+- Smooth transitions and micro-interactions
+
+#### **Popup Screen (`popup.css`)**
+- Gradient text effects on titles
+- Enhanced button animations with shimmer effects
+- Improved spacing and visual hierarchy
+- Contemporary card-like design
+
+#### **Setup Screen (`setup.css`)**
+- Modern form input styling with focus states
+- Glassmorphism input fields with backdrop blur
+- Enhanced button interactions
+- Improved accessibility with better contrast
+
+#### **Content Script (`contentScript.css`)**
+- Modern button design with gradient backgrounds
+- Enhanced toggle switch with smooth animations
+- Improved text input styling
+- Consistent interaction patterns
+
+### ✨ Animation System
+- **Cubic-bezier easing**: Natural motion curves
+- **Shimmer effects**: Subtle light animations on hover
+- **Transform animations**: Scale and translate effects
+- **Fade transitions**: Smooth opacity changes
+- **Success animations**: Animated checkmarks and fade-ins
 
 ## Usage
 
