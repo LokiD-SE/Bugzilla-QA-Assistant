@@ -1,91 +1,130 @@
 #bugFixTemplateButton {
-    padding: 5px 15px;
-    font-size: 14px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: #4CAF50;
+    padding: 8px 20px;
+    font-size: 13px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
     color: white;
     cursor: pointer;
     margin-left: 20px;
     display: inline-block;
     text-align: center;
-    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 900; 
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    box-shadow: 
+        0 4px 12px rgba(76, 175, 80, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+#bugFixTemplateButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
 }
 
 #bugFixTemplateButton:hover {
-    background-color: #45a049;
+    background: linear-gradient(135deg, #45a049 0%, #3d8b40 100%);
+    transform: translateY(-2px);
+    box-shadow: 
+        0 6px 20px rgba(76, 175, 80, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+#bugFixTemplateButton:hover::before {
+    left: 100%;
 }
 
 #bugFixTemplateButton:active {
-    transform: scale(0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    background-color: #3d8b40;
+    transform: translateY(0) scale(0.98);
+    box-shadow: 
+        0 2px 8px rgba(76, 175, 80, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
 #bugFixTemplateButton.disabled {
-    background-color: #cccccc;
+    background: linear-gradient(135deg, #cccccc 0%, #b3b3b3 100%);
     color: #666666;
     cursor: not-allowed;
     pointer-events: none;
     opacity: 0.6;
+    transform: none;
+    box-shadow: none;
 }
 
 #comment_tabs {
     display: flex;
     justify-content: flex-start;
     align-items: center;
-    padding: 10px 0;
+    padding: 12px 0;
+    gap: 8px;
 }
 
 #comment_tabs .comment_tab.active_comment_tab {
-    background-color: #007bff;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     color: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
 }
 
 #bugFixTemplateButton {
     flex-shrink: 0;
 }
 #bugFixTextBox {
-    padding: 5px 5px;
-    font-size: 14px;
+    padding: 8px 12px;
+    font-size: 13px;
     font-family: 'JetBrains Mono', monospace;
-    font-weight: 900;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    background-color: white;
-    color: black;
-    margin-left: 5px;
+    font-weight: 500;
+    border: 1px solid rgba(182, 165, 189, 0.3);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #0F0013;
+    margin-left: 8px;
     display: inline-block;
     text-align: center;
-    transition: transform 0.1s ease, box-shadow 0.1s ease, background-color 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     flex-shrink: 0;
     box-sizing: border-box;
     cursor: text;
+    letter-spacing: 0.3px;
+    backdrop-filter: blur(10px);
 }
 
 /* Hover & Focus match button behavior */
 #bugFixTextBox:hover,
 #bugFixTextBox:focus {
-    background-color: #e0e0e0;
+    background: rgba(255, 255, 255, 0.95);
+    border-color: #D0CFF2;
     outline: none;
+    box-shadow: 
+        0 0 0 3px rgba(208, 207, 242, 0.2),
+        0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 /* Active-like feedback when typing */
 #bugFixTextBox:active {
-    transform: scale(0.95);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    background-color: white;
+    transform: translateY(0) scale(0.98);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.95);
 }
 
 /* Disabled state similar to button */
 #bugFixTextBox:disabled {
-    background-color: #e0e0e0;
+    background: rgba(224, 224, 224, 0.8);
     color: #666666;
     cursor: not-allowed;
     pointer-events: none;
     opacity: 0.6;
+    border-color: rgba(182, 165, 189, 0.2);
 }
 .bug-Fix-Toggle {
   display: none;
@@ -94,35 +133,45 @@
 /* Toggle container (label) */
 .bug-Fix-Toggle-label {
   display: inline-block;
-  width: 30px;
-  height: 16px;
-  background-color: #ccc;
-  border-radius: 16px;
+  width: 36px;
+  height: 20px;
+  background: linear-gradient(135deg, #cccccc 0%, #b3b3b3 100%);
+  border-radius: 20px;
   position: relative;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   vertical-align: middle;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Inner circle */
 .bug-Fix-Toggle-label::after {
   content: '';
   position: absolute;
-  top: 1px;
-  left: 1px;
-  width: 14px;
-  height: 14px;
-  background-color: white;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
   border-radius: 50%;
-  transition: transform 0.3s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 
+    0 2px 4px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
 /* When checked, move circle and change background */
 .bug-Fix-Toggle:checked + .bug-Fix-Toggle-label {
-  background-color: #4CAF50;
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 0 0 3px rgba(76, 175, 80, 0.2);
 }
 
 .bug-Fix-Toggle:checked + .bug-Fix-Toggle-label::after {
-  transform: translateX(14px);
+  transform: translateX(16px);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f8f8 100%);
+  box-shadow: 
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
 }
