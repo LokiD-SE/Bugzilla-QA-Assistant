@@ -36,7 +36,8 @@
                     { value: 'bugInvalid', text: 'Bug Invalid' },
                     { value: 'bugNoResponse', text: 'No Response' },
                     { value: 'bugNeedsInfo', text: 'Needs Info' },
-                    { value: 'bugWiki', text: 'Wiki' },
+                    { value: 'bugRaiseWiki', text: 'Raise Wiki' },
+                    { value: 'bugWiki', text: 'Wiki Review' },
                     { value: 'bugConfirmation', text: 'Confirmation' },
                     { value: 'bugVerification', text: 'Verification' }
 
@@ -94,7 +95,7 @@
                     let format, apiKey, Prompt;
                     const isAiEnabled = document.querySelector('#bugFixToggle').checked;
                     apiKey = document.getElementById('bugFixTextBox').value;
-                    if(bugPageTitle=='Bugzilla – Enter Bug: Mobile App'||bugPageTitle=='Bugzilla – Enter Bug: BizomWeb')
+                    if(bugPageTitle=='Bugzilla – Enter Bug: Mobile App'||bugPageTitle=='Bugzilla – Enter Bug: BizomWeb'||bugPageTitle=='Bugzilla – Enter Bug: Internal Tools')
                     {
                         console.log('Product & Component Found');
                         product = document.querySelector('#field_container_product').innerText;
@@ -205,7 +206,7 @@
                                   Now generate the summary using the above format with guidelines and the following input variables:
                                   ${text}`;
                                   }
-                                  else
+                                  else if (Prompt === "bugReporting")
                                   {
                                   geminiPrompt = `Please generate a human-friendly summary based on the given input text. Follow the exact format structure provided below. Do NOT change the section headings, spacing, or structure. Update only the content under each heading in a simple and easy-to-understand language.
 
@@ -260,6 +261,61 @@
                                   - Build Date & Hardware: Date and hardware of the build in which you first encountered the bug
                                   - Additional Builds and Platforms: Whether or not the bug takes place on other platforms (or browsers, if applicable)
                                   - Additional Information: Any other useful information.
+                                  - Leave a section empty if no relevant data is provided”
+
+                                  Now generate the summary using the above format with guidelines and the following input variables:
+                                  ${text}`;
+                                  }
+                                  else
+                                  {
+                                  geminiPrompt = `Please generate a human-friendly summary based on the given input text. Follow the exact format structure provided below. Do NOT change the section headings, spacing, or structure. Update only the content under each heading in a simple and easy-to-understand language.
+
+                                    Use the following format based on the Data provided by the "format" below.
+
+                                  ---
+
+                                  **use this format:**
+
+                                  Hi Team,
+
+                                  ** Suggested Wiki Page **
+
+                                  ** One Liner of Implementation **
+
+                                  ** Prerequisite/Configuration Steps **
+
+                                  ** Environment Details **
+                                  Verified In : Dev | Staging | Live
+                                  URL:
+                                  Admin:
+                                  User:
+                                  Branch/version:
+
+                                  ** Detailed Summary **
+
+                                  ** Impacted areas **
+
+                                  ** Test case and Attachment links **
+
+                                  ** Reference Ticket link **
+
+                                  Please contact me for any queries.
+
+                                  ---
+
+                                  Guidelines:
+                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page **, ** One Liner of Implementation **).
+                                  - One Liner of Implementation Heading should have the one liner of the bug that is reported.
+                                  - Keep section spacing and layout exactly as shown.
+                                  - Add related information to all the headings and generate information for each heading.
+                                  - Always include URL credentials and branch/version under "Environment Details".
+                                  - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
+                                  - Always start with “Hi Team,” and end with “Please contact me for any queries.
+                                  - Detailed Summary: More detailed restatement of summary
+                                  - Prerequisite/Configuration Steps: Minimized, easy-to-follow steps that will be the prerequisite or configuration steps for the ticket. Include any special setup steps
+                                  - Impacted areas: Modules like, orders, sale, skunits, inventories that are impacted by this implementation can be included here.
+                                  - Test case and Attachment links: Add Provided QA touch, sheet or drive links here
+                                  - Reference Ticket link: Add Zoho or bugzilla ticket link provided.
                                   - Leave a section empty if no relevant data is provided”
 
                                   Now generate the summary using the above format with guidelines and the following input variables:
@@ -722,6 +778,116 @@
                             }
                             return;
                         }
+
+                        if (selected.value == "bugRaiseWiki") {
+                            // === START: Updated selection logic (This is the correct approach) ===
+                            // Select both the #comment and #short_desc elements by their IDs.
+                            const shortDescElement = document.querySelector('#short_desc');
+                            const commentElement = document.querySelector('#comment');
+
+                            const shortDescValue = shortDescElement ? shortDescElement.value : '';
+                            const commentValue = commentElement ? commentElement.value : '';
+
+                            // Create an array of texts from both inputs to be processed for URL and Step extraction.
+                            // This correctly collects both values without overwriting.
+                            const commentTexts = [shortDescValue, commentValue].filter(text => text.trim() !== '');
+
+                            // combinedText is the initial text passed to the AI model.
+                            let combinedText = commentTexts.join(' ');
+                            // === END: Updated selection logic ===
+
+                            let prompt = selected.value;
+
+                            const prodUrls = new Set();
+                            const backupUrls = new Set();
+                            const stagingUrls = new Set();
+
+                            // === Extract URLs ===
+                            commentTexts.forEach(text => {
+                                const matches = text.match(/https?:\/\/[^\s]+/g);
+                                if (!matches) return;
+
+                                matches.forEach(url => {
+                                    try {
+                                        const cleanUrl = new URL(url);
+                                        const baseUrl = cleanUrl.origin + '/';
+                                        const host = cleanUrl.hostname;
+
+                                        if (/^[a-z0-9-]+\.bizom\.[a-z.]+$/i.test(host)) {
+                                            prodUrls.add(baseUrl);
+                                            const subdomain = host.split('.')[0];
+                                            const tld = host.split('.').slice(2).join('.');
+                                            const stagingUrl = `${cleanUrl.protocol}//staging${subdomain}.bizomstaging.${tld}/`;
+                                            stagingUrls.add(stagingUrl);
+                                        } else if (/^backupexperience\.bizombackup\.[a-z.]+$/i.test(host)) {
+                                            backupUrls.add(baseUrl);
+                                        }
+                                    } catch {
+                                        // skip invalid URLs
+                                    }
+                                });
+                            });
+
+                            const formattedUrls = [
+                                ...prodUrls,
+                                ...backupUrls,
+                                ...stagingUrls
+                            ].join('\n');
+
+                            // === Extract Steps ===
+                            const allSteps = [];
+
+                            commentTexts.forEach(text => {
+                                const lines = text.split('\n');
+                                let steps = [];
+                                let collecting = false;
+
+                                for (let line of lines) {
+                                    line = line.trim();
+                                    if (line.toLowerCase().includes("steps to reproduce")) {
+                                        collecting = true;
+                                        continue;
+                                    }
+                                    if (collecting && (line.startsWith("**") || line.toLowerCase().startsWith("expected result"))) {
+                                        break;
+                                    }
+                                    if (collecting && line && !line.startsWith("**")) {
+                                        steps.push(line);
+                                    }
+                                }
+
+                                if (steps.length > 0) {
+                                    allSteps.push(...steps);
+                                }
+                            });
+
+                            // === Merge all data into combinedText for the AI prompt ===
+                            // We add newlines for clear separation between the original text, URLs, and steps.
+                            combinedText += "\n\n--- Extracted URLs ---\n" + formattedUrls;
+                            combinedText += "\n\n--- Extracted Steps ---\n" + allSteps.join('\n');
+                            console.log(combinedText);
+                            // === Generate Summary & Set TextArea ===
+                            format = `Hi Team,\n\n** Suggested Wiki Page **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
+                            if(isAiEnabled === true)
+                            {
+                              generateAISummary(format, combinedText, apiKey, formattedUrls, "bugRaiseWiki").then(summary => {
+                                if (summary !== null){
+                                textArea.value = summary;
+                                }
+                                else{
+                                textArea.value = format;
+                                }
+                              }).catch(err => {
+                                console.error("Error generating summary:", err);
+                                textArea.value = format;
+                              });
+                            }
+                            else{
+                            textArea.value = format;
+                            }
+                          return;
+                        }
+
                         if (selected.value=="bugFixTemplate") {
                             try {
                                 const credentials = btoa(`${username}:${token}`);
