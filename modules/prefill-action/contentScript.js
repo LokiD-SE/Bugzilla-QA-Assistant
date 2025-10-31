@@ -278,7 +278,7 @@
 
                                   Hi Team,
 
-                                  ** Suggested Wiki Page **
+                                  ** Suggested Wiki Page Link **
 
                                   ** One Liner of Implementation **
 
@@ -304,7 +304,8 @@
                                   ---
 
                                   Guidelines:
-                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page **, ** One Liner of Implementation **).
+                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page Link **, ** One Liner of Implementation **).
+                                  - Suggested Wiki Page Link Heading should have any wiki links suggested.
                                   - One Liner of Implementation Heading should have the one liner of the bug that is reported.
                                   - Keep section spacing and layout exactly as shown.
                                   - Add related information to all the headings and generate information for each heading.
@@ -867,7 +868,7 @@
                             combinedText += "\n\n--- Extracted Steps ---\n" + allSteps.join('\n');
                             console.log(combinedText);
                             // === Generate Summary & Set TextArea ===
-                            format = `Hi Team,\n\n** Suggested Wiki Page **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
+                            format = `Hi Team,\n\n** Suggested Wiki Page Link **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
                             if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugRaiseWiki").then(summary => {
