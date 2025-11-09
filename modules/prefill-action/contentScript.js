@@ -328,23 +328,46 @@
 
                                   let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                                   let aiSections = '';
-                                  try {
-                                      const geminiResp = await fetch(geminiUrl, {
-                                          method: 'POST',
-                                          headers: {
-                                              'Content-Type': 'application/json'
-                                          },
-                                          body: JSON.stringify({
-                                              contents: [{ parts: [{ text: geminiPrompt }] }]
-                                          })
-                                      });
-                                      if (geminiResp.ok) {
+                                  const maxAttempts = 5;
+                                  const baseDelayMs = 1000;
+                                  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                                  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                                      try {
+                                          const geminiResp = await fetch(geminiUrl, {
+                                              method: 'POST',
+                                              headers: {
+                                                  'Content-Type': 'application/json'
+                                              },
+                                              body: JSON.stringify({
+                                                  contents: [{ parts: [{ text: geminiPrompt }] }]
+                                              })
+                                          });
+                                          if (geminiResp.status === 429) {
+                                              if (attempt === maxAttempts) {
+                                                  aiSections = format;
+                                                  break;
+                                              }
+                                              const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                                              await sleep(delay);
+                                              continue;
+                                          }
+                                          if (!geminiResp.ok) {
+                                              aiSections = format;
+                                              break;
+                                          }
                                           const geminiData = await geminiResp.json();
                                           aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                                      } else {
-                                          aiSections = format;
+                                          break;
+                                      } catch (err) {
+                                          if (attempt === maxAttempts) {
+                                              aiSections = format;
+                                              break;
+                                          }
+                                          const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                                          await sleep(delay);
                                       }
-                                  } catch (err) {
+                                  }
+                                  if (!aiSections) {
                                       aiSections = format;
                                   }
                                   return aiSections;
