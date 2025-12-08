@@ -322,27 +322,194 @@
                                   ${text}`;
                                   }
 
-                                  let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
-                                  let aiSections = '';
-                                  try {
-                                      const geminiResp = await fetch(geminiUrl, {
-                                          method: 'POST',
-                                          headers: {
-                                              'Content-Type': 'application/json'
-                                          },
-                                          body: JSON.stringify({
-                                              contents: [{ parts: [{ text: geminiPrompt }] }]
-                                          })
-                                      });
-                                      if (geminiResp.ok) {
-                                          const geminiData = await geminiResp.json();
-                                          aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                                      } else {
-                                          aiSections = format;
-                                      }
-                                  } catch (err) {
-                                      aiSections = format;
+                                  // Validate API key
+                                  if (!apiKey || apiKey.trim() === '') {
+                                      console.error('Gemini API key is missing or empty');
+                                      return format;
                                   }
+
+                                  // Model configurations with API version
+                                  const modelConfigs = [
+                                      { name: 'gemini-2.0-flash-exp', version: 'v1beta' },
+                                      { name: 'gemini-2.0-flash', version: 'v1beta' },
+                                      { name: 'gemini-1.5-flash', version: 'v1' },  // Try v1 for fallback models
+                                      { name: 'gemini-1.5-pro', version: 'v1' },
+                                      { name: 'gemini-pro', version: 'v1' }  // Additional fallback
+                                  ];
+
+                                  let aiSections = '';
+                                  let lastError = null;
+                                  let quotaExhausted = false;
+
+                                  // Helper function to parse retry time from error message
+                                  function parseRetryTime(errorMessage) {
+                                      const match = errorMessage.match(/Please retry in ([\d.]+)s/);
+                                      if (match) {
+                                          const seconds = parseFloat(match[1]);
+                                          // Add a small buffer (10%) and convert to milliseconds
+                                          return Math.ceil(seconds * 1100);
+                                      }
+                                      return null;
+                                  }
+
+                                  // Helper function to check if error indicates quota exhaustion
+                                  function isQuotaExhausted(errorMessage) {
+                                      return errorMessage && (
+                                          errorMessage.includes('exceeded your current quota') ||
+                                          errorMessage.includes('Quota exceeded') ||
+                                          errorMessage.includes('free_tier_requests, limit: 0')
+                                      );
+                                  }
+
+                                  // Retry function with intelligent backoff for 429 errors
+                                  async function fetchWithRetry(url, options, maxRetries = 2) {
+                                      for (let attempt = 0; attempt < maxRetries; attempt++) {
+                                          try {
+                                              const response = await fetch(url, options);
+                                              
+                                              // Handle 429 (Rate Limit) with retry
+                                              if (response.status === 429) {
+                                                  const errorText = await response.text();
+                                                  let errorData;
+                                                  try {
+                                                      errorData = JSON.parse(errorText);
+                                                  } catch {
+                                                      errorData = { error: { message: errorText } };
+                                                  }
+                                                  
+                                                  const errorMessage = errorData.error?.message || errorText;
+                                                  
+                                                  // Check if quota is exhausted
+                                                  if (isQuotaExhausted(errorMessage)) {
+                                                      quotaExhausted = true;
+                                                      throw new Error(`Quota Exhausted: ${errorMessage}`);
+                                                  }
+                                                  
+                                                  // If we have retries left, wait and retry
+                                                  if (attempt < maxRetries - 1) {
+                                                      // Try to parse retry time from error message
+                                                      const retryTime = parseRetryTime(errorMessage);
+                                                      const delay = retryTime || (1000 * Math.pow(2, attempt)); // Use parsed time or exponential backoff
+                                                      
+                                                      console.warn(`Rate limited (429). Waiting ${Math.round(delay/1000)}s before retry (attempt ${attempt + 1}/${maxRetries})...`);
+                                                      await new Promise(resolve => setTimeout(resolve, delay));
+                                                      continue;
+                                                  } else {
+                                                      throw new Error(`API Error ${response.status}: ${errorMessage}`);
+                                                  }
+                                              }
+
+                                              // Handle other status codes
+                                              if (!response.ok) {
+                                                  const errorText = await response.text();
+                                                  let errorData;
+                                                  try {
+                                                      errorData = JSON.parse(errorText);
+                                                  } catch {
+                                                      errorData = { error: { message: errorText } };
+                                                  }
+                                                  throw new Error(`API Error ${response.status}: ${errorData.error?.message || response.statusText}`);
+                                              }
+
+                                              return response;
+                                          } catch (err) {
+                                              lastError = err;
+                                              // If quota exhausted, don't retry
+                                              if (err.message && err.message.includes('Quota Exhausted')) {
+                                                  throw err;
+                                              }
+                                              // If it's the last attempt or not a retryable error, throw
+                                              if (attempt === maxRetries - 1) {
+                                                  throw err;
+                                              }
+                                          }
+                                      }
+                                  }
+
+                                  // Try each model configuration until one works
+                                  for (const config of modelConfigs) {
+                                      // If quota is exhausted, skip all models and use fallback
+                                      if (quotaExhausted) {
+                                          console.warn('Quota exhausted. Skipping remaining models.');
+                                          break;
+                                      }
+
+                                      try {
+                                          const geminiUrl = `https://generativelanguage.googleapis.com/${config.version}/models/${config.name}:generateContent?key=${apiKey}`;
+                                          console.log(`Trying model: ${config.name} (${config.version})`);
+                                          
+                                          const geminiResp = await fetchWithRetry(geminiUrl, {
+                                              method: 'POST',
+                                              headers: {
+                                                  'Content-Type': 'application/json'
+                                              },
+                                              body: JSON.stringify({
+                                                  contents: [{ parts: [{ text: geminiPrompt }] }]
+                                              })
+                                          });
+
+                                          const geminiData = await geminiResp.json();
+                                          
+                                          // Check if response has error
+                                          if (geminiData.error) {
+                                              const errorMessage = geminiData.error.message || 'Unknown API error';
+                                              console.error(`Error from ${config.name}:`, errorMessage);
+                                              
+                                              // Check if quota exhausted
+                                              if (isQuotaExhausted(errorMessage)) {
+                                                  quotaExhausted = true;
+                                                  lastError = new Error(`Quota Exhausted: ${errorMessage}`);
+                                                  break; // Stop trying other models
+                                              }
+                                              
+                                              lastError = new Error(errorMessage);
+                                              continue; // Try next model
+                                          }
+
+                                          aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                                          
+                                          if (aiSections) {
+                                              console.log(`Successfully used model: ${config.name}`);
+                                              break; // Success, exit loop
+                                          }
+                                      } catch (err) {
+                                          const errorMessage = err.message || '';
+                                          console.error(`Failed to use model ${config.name}:`, errorMessage);
+                                          
+                                          // Check if quota exhausted
+                                          if (isQuotaExhausted(errorMessage)) {
+                                              quotaExhausted = true;
+                                              lastError = err;
+                                              break; // Stop trying other models
+                                          }
+                                          
+                                          lastError = err;
+                                          
+                                          // If it's a 404, try next model
+                                          if (errorMessage.includes('404')) {
+                                              continue; // Try next model
+                                          }
+                                          
+                                          // For quota/rate limit errors, continue to next model only if not exhausted
+                                          if (errorMessage.includes('429') || errorMessage.includes('quota')) {
+                                              continue;
+                                          }
+                                      }
+                                  }
+
+                                  // If all models failed, return format and log error
+                                  if (!aiSections) {
+                                      if (quotaExhausted) {
+                                          console.error('Gemini API quota exhausted. Please check your API quota and billing settings:');
+                                          console.error('https://ai.dev/usage?tab=rate-limit');
+                                          console.error('Falling back to manual format template');
+                                      } else {
+                                          console.error('All Gemini API models failed. Last error:', lastError?.message || 'Unknown error');
+                                          console.error('Falling back to manual format template');
+                                      }
+                                      return format;
+                                  }
+
                                   return aiSections;
                     }
                     let selected = bugFixTemplateSelect.options[bugFixTemplateSelect.selectedIndex];
