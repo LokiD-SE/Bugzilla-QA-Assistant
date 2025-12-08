@@ -278,7 +278,7 @@
 
                                   Hi Team,
 
-                                  ** Suggested Wiki Page **
+                                  ** Suggested Wiki Page Link **
 
                                   ** One Liner of Implementation **
 
@@ -290,6 +290,8 @@
                                   Admin:
                                   User:
                                   Branch/version:
+
+                                  ** Implemented On **
 
                                   ** Detailed Summary **
 
@@ -304,11 +306,13 @@
                                   ---
 
                                   Guidelines:
-                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page **, ** One Liner of Implementation **).
+                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page Link **, ** One Liner of Implementation **).
+                                  - Suggested Wiki Page Link Heading should have any wiki links suggested.
                                   - One Liner of Implementation Heading should have the one liner of the bug that is reported.
                                   - Keep section spacing and layout exactly as shown.
                                   - Add related information to all the headings and generate information for each heading.
                                   - Always include URL credentials and branch/version under "Environment Details".
+                                  - Implemented On: Mention the implemented on with following values given here, The implemented on can have multiple values separated by comma - Web/App/Bourbon Anroid/BizomNext Android/IOS.
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.
                                   - Detailed Summary: More detailed restatement of summary
@@ -1074,7 +1078,7 @@
                             combinedText += "\n\n--- Extracted Steps ---\n" + allSteps.join('\n');
                             console.log(combinedText);
                             // === Generate Summary & Set TextArea ===
-                            format = `Hi Team,\n\n** Suggested Wiki Page **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
+                            format = `Hi Team,\n\n** Suggested Wiki Page Link **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch:\nAPP Link/Version:\n\n** Implemented On **\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
                             if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugRaiseWiki").then(summary => {
