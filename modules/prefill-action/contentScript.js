@@ -329,12 +329,16 @@
                                   }
 
                                   // Model configurations with API version
+                                  // Prioritized by available RPD quota (higher available quota first)
                                   const modelConfigs = [
-                                      { name: 'gemini-2.0-flash-exp', version: 'v1beta' },
-                                      { name: 'gemini-2.0-flash', version: 'v1beta' },
-                                      { name: 'gemini-1.5-flash', version: 'v1' },  // Try v1 for fallback models
-                                      { name: 'gemini-1.5-pro', version: 'v1' },
-                                      { name: 'gemini-pro', version: 'v1' }  // Additional fallback
+                                      { name: 'gemini-2.5-flash-lite', version: 'v1beta' },  // Primary: 0/20 RPD available
+                                      { name: 'gemini-robotics-er-1.5-preview', version: 'v1beta' },  // Fallback: 0/250 RPD available (much higher limit)
+                                      { name: 'gemini-2.5-flash', version: 'v1beta' },  // Fallback: 19/20 RPD (might have quota left)
+                                      { name: 'gemma-3-27b', version: 'v1beta' },  // Fallback: 0/14.4K RPD (very high limit)
+                                      { name: 'gemma-3-12b', version: 'v1beta' },  // Fallback: 0/14.4K RPD
+                                      { name: 'gemini-2.0-flash', version: 'v1beta' },  // Additional fallback
+                                      { name: 'gemini-1.5-flash', version: 'v1' },  // Legacy fallback
+                                      { name: 'gemini-1.5-pro', version: 'v1' }  // Legacy fallback
                                   ];
 
                                   let aiSections = '';
@@ -357,7 +361,19 @@
                                       return errorMessage && (
                                           errorMessage.includes('exceeded your current quota') ||
                                           errorMessage.includes('Quota exceeded') ||
-                                          errorMessage.includes('free_tier_requests, limit: 0')
+                                          errorMessage.includes('free_tier_requests, limit: 0') ||
+                                          errorMessage.includes('RPD') ||  // Requests Per Day limit
+                                          errorMessage.includes('requests per day')
+                                      );
+                                  }
+
+                                  // Helper function to check if error indicates daily limit (RPD) for specific model
+                                  function isDailyLimitReached(errorMessage, modelName) {
+                                      // Check if this is a daily limit error (RPD) - we should try next model
+                                      return errorMessage && (
+                                          errorMessage.includes('RPD') ||
+                                          errorMessage.includes('requests per day') ||
+                                          (errorMessage.includes('quota') && errorMessage.includes(modelName))
                                       );
                                   }
 
@@ -379,13 +395,22 @@
                                                   
                                                   const errorMessage = errorData.error?.message || errorText;
                                                   
-                                                  // Check if quota is exhausted
-                                                  if (isQuotaExhausted(errorMessage)) {
+                                                  // Extract model name from URL to check daily limits
+                                                  const urlMatch = url.match(/models\/([^:]+)/);
+                                                  const modelName = urlMatch ? urlMatch[1] : '';
+                                                  
+                                                  // Check if this is a daily limit (RPD) - don't retry, try next model
+                                                  if (isDailyLimitReached(errorMessage, modelName)) {
+                                                      throw new Error(`Daily limit reached: ${errorMessage}`);
+                                                  }
+                                                  
+                                                  // Check if overall quota is exhausted (all models)
+                                                  if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, modelName)) {
                                                       quotaExhausted = true;
                                                       throw new Error(`Quota Exhausted: ${errorMessage}`);
                                                   }
                                                   
-                                                  // If we have retries left, wait and retry
+                                                  // If we have retries left, wait and retry (for temporary rate limits)
                                                   if (attempt < maxRetries - 1) {
                                                       // Try to parse retry time from error message
                                                       const retryTime = parseRetryTime(errorMessage);
@@ -455,8 +480,15 @@
                                               const errorMessage = geminiData.error.message || 'Unknown API error';
                                               console.error(`Error from ${config.name}:`, errorMessage);
                                               
-                                              // Check if quota exhausted
-                                              if (isQuotaExhausted(errorMessage)) {
+                                              // Check if daily limit (RPD) reached for this model - try next model
+                                              if (isDailyLimitReached(errorMessage, config.name)) {
+                                                  console.warn(`${config.name} has reached its daily limit (RPD). Trying next model...`);
+                                                  lastError = new Error(`Daily limit reached for ${config.name}: ${errorMessage}`);
+                                                  continue; // Try next model
+                                              }
+                                              
+                                              // Check if overall quota exhausted (all models)
+                                              if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, config.name)) {
                                                   quotaExhausted = true;
                                                   lastError = new Error(`Quota Exhausted: ${errorMessage}`);
                                                   break; // Stop trying other models
@@ -476,8 +508,15 @@
                                           const errorMessage = err.message || '';
                                           console.error(`Failed to use model ${config.name}:`, errorMessage);
                                           
-                                          // Check if quota exhausted
-                                          if (isQuotaExhausted(errorMessage)) {
+                                          // Check if daily limit (RPD) reached for this model - try next model
+                                          if (isDailyLimitReached(errorMessage, config.name)) {
+                                              console.warn(`${config.name} has reached its daily limit (RPD). Trying next model...`);
+                                              lastError = err;
+                                              continue; // Try next model
+                                          }
+                                          
+                                          // Check if overall quota exhausted (all models)
+                                          if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, config.name)) {
                                               quotaExhausted = true;
                                               lastError = err;
                                               break; // Stop trying other models
@@ -490,7 +529,8 @@
                                               continue; // Try next model
                                           }
                                           
-                                          // For quota/rate limit errors, continue to next model only if not exhausted
+                                          // For quota/rate limit errors (429), continue to next model
+                                          // This allows trying other models when one hits its limit
                                           if (errorMessage.includes('429') || errorMessage.includes('quota')) {
                                               continue;
                                           }
