@@ -360,24 +360,26 @@
                                       return null;
                                   }
 
-                                  // Helper function to check if error indicates quota exhaustion
+                                  // Helper function to check if error indicates overall quota/billing exhaustion
+                                  // This is for account-level quota issues, NOT model-specific daily limits
                                   function isQuotaExhausted(errorMessage) {
                                       return errorMessage && (
                                           errorMessage.includes('exceeded your current quota') ||
                                           errorMessage.includes('Quota exceeded') ||
                                           errorMessage.includes('free_tier_requests, limit: 0') ||
-                                          errorMessage.includes('RPD') ||  // Requests Per Day limit
-                                          errorMessage.includes('requests per day')
+                                          (errorMessage.includes('billing') && errorMessage.includes('quota'))
                                       );
                                   }
 
                                   // Helper function to check if error indicates daily limit (RPD) for specific model
+                                  // RPD errors are model-specific and should trigger trying the next model
                                   function isDailyLimitReached(errorMessage, modelName) {
                                       // Check if this is a daily limit error (RPD) - we should try next model
                                       return errorMessage && (
                                           errorMessage.includes('RPD') ||
                                           errorMessage.includes('requests per day') ||
-                                          (errorMessage.includes('quota') && errorMessage.includes(modelName))
+                                          (errorMessage.includes('quota') && errorMessage.includes(modelName)) ||
+                                          (errorMessage.includes('free_tier') && errorMessage.includes(modelName))
                                       );
                                   }
 
@@ -403,13 +405,14 @@
                                                   const urlMatch = url.match(/models\/([^:]+)/);
                                                   const modelName = urlMatch ? urlMatch[1] : '';
                                                   
-                                                  // Check if this is a daily limit (RPD) - don't retry, try next model
+                                                  // Check if this is a daily limit (RPD) for specific model - don't retry, try next model
                                                   if (isDailyLimitReached(errorMessage, modelName)) {
                                                       throw new Error(`Daily limit reached: ${errorMessage}`);
                                                   }
                                                   
                                                   // Check if overall quota is exhausted (all models)
-                                                  if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, modelName)) {
+                                                  // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                                  if (isQuotaExhausted(errorMessage)) {
                                                       quotaExhausted = true;
                                                       throw new Error(`Quota Exhausted: ${errorMessage}`);
                                                   }
@@ -492,7 +495,8 @@
                                               }
                                               
                                               // Check if overall quota exhausted (all models)
-                                              if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, config.name)) {
+                                              // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                              if (isQuotaExhausted(errorMessage)) {
                                                   quotaExhausted = true;
                                                   lastError = new Error(`Quota Exhausted: ${errorMessage}`);
                                                   break; // Stop trying other models
@@ -520,7 +524,8 @@
                                           }
                                           
                                           // Check if overall quota exhausted (all models)
-                                          if (isQuotaExhausted(errorMessage) && !isDailyLimitReached(errorMessage, config.name)) {
+                                          // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                          if (isQuotaExhausted(errorMessage)) {
                                               quotaExhausted = true;
                                               lastError = err;
                                               break; // Stop trying other models
