@@ -326,14 +326,151 @@
                                   ${text}`;
                                   }
 
-                                  let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+                                  // Validate API key
+                                  if (!apiKey || apiKey.trim() === '') {
+                                      console.error('Gemini API key is missing or empty');
+                                      return format;
+                                  }
+
+                                  // Model configurations with API version
+                                  // Prioritized by available RPD quota (higher available quota first)
+                                  const modelConfigs = [
+                                      { name: 'gemini-2.5-flash-lite', version: 'v1beta' },  // Primary: 0/20 RPD available
+                                      { name: 'gemini-robotics-er-1.5-preview', version: 'v1beta' },  // Fallback: 0/250 RPD available (much higher limit)
+                                      { name: 'gemini-2.5-flash', version: 'v1beta' },  // Fallback: 19/20 RPD (might have quota left)
+                                      { name: 'gemma-3-27b', version: 'v1beta' },  // Fallback: 0/14.4K RPD (very high limit)
+                                      { name: 'gemma-3-12b', version: 'v1beta' },  // Fallback: 0/14.4K RPD
+                                      { name: 'gemini-2.0-flash', version: 'v1beta' },  // Additional fallback
+                                      { name: 'gemini-1.5-flash', version: 'v1' },  // Legacy fallback
+                                      { name: 'gemini-1.5-pro', version: 'v1' }  // Legacy fallback
+                                  ];
+
                                   let aiSections = '';
-                                  const maxAttempts = 5;
-                                  const baseDelayMs = 1000;
-                                  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-                                  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                                  let lastError = null;
+                                  let quotaExhausted = false;
+
+                                  // Helper function to parse retry time from error message
+                                  function parseRetryTime(errorMessage) {
+                                      const match = errorMessage.match(/Please retry in ([\d.]+)s/);
+                                      if (match) {
+                                          const seconds = parseFloat(match[1]);
+                                          // Add a small buffer (10%) and convert to milliseconds
+                                          return Math.ceil(seconds * 1100);
+                                      }
+                                      return null;
+                                  }
+
+                                  // Helper function to check if error indicates overall quota/billing exhaustion
+                                  // This is for account-level quota issues, NOT model-specific daily limits
+                                  function isQuotaExhausted(errorMessage) {
+                                      return errorMessage && (
+                                          errorMessage.includes('exceeded your current quota') ||
+                                          errorMessage.includes('Quota exceeded') ||
+                                          errorMessage.includes('free_tier_requests, limit: 0') ||
+                                          (errorMessage.includes('billing') && errorMessage.includes('quota'))
+                                      );
+                                  }
+
+                                  // Helper function to check if error indicates daily limit (RPD) for specific model
+                                  // RPD errors are model-specific and should trigger trying the next model
+                                  function isDailyLimitReached(errorMessage, modelName) {
+                                      // Check if this is a daily limit error (RPD) - we should try next model
+                                      return errorMessage && (
+                                          errorMessage.includes('RPD') ||
+                                          errorMessage.includes('requests per day') ||
+                                          (errorMessage.includes('quota') && errorMessage.includes(modelName)) ||
+                                          (errorMessage.includes('free_tier') && errorMessage.includes(modelName))
+                                      );
+                                  }
+
+                                  // Retry function with intelligent backoff for 429 errors
+                                  async function fetchWithRetry(url, options, maxRetries = 2) {
+                                      for (let attempt = 0; attempt < maxRetries; attempt++) {
+                                          try {
+                                              const response = await fetch(url, options);
+                                              
+                                              // Handle 429 (Rate Limit) with retry
+                                              if (response.status === 429) {
+                                                  const errorText = await response.text();
+                                                  let errorData;
+                                                  try {
+                                                      errorData = JSON.parse(errorText);
+                                                  } catch {
+                                                      errorData = { error: { message: errorText } };
+                                                  }
+                                                  
+                                                  const errorMessage = errorData.error?.message || errorText;
+                                                  
+                                                  // Extract model name from URL to check daily limits
+                                                  const urlMatch = url.match(/models\/([^:]+)/);
+                                                  const modelName = urlMatch ? urlMatch[1] : '';
+                                                  
+                                                  // Check if this is a daily limit (RPD) for specific model - don't retry, try next model
+                                                  if (isDailyLimitReached(errorMessage, modelName)) {
+                                                      throw new Error(`Daily limit reached: ${errorMessage}`);
+                                                  }
+                                                  
+                                                  // Check if overall quota is exhausted (all models)
+                                                  // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                                  if (isQuotaExhausted(errorMessage)) {
+                                                      quotaExhausted = true;
+                                                      throw new Error(`Quota Exhausted: ${errorMessage}`);
+                                                  }
+                                                  
+                                                  // If we have retries left, wait and retry (for temporary rate limits)
+                                                  if (attempt < maxRetries - 1) {
+                                                      // Try to parse retry time from error message
+                                                      const retryTime = parseRetryTime(errorMessage);
+                                                      const delay = retryTime || (1000 * Math.pow(2, attempt)); // Use parsed time or exponential backoff
+                                                      
+                                                      console.warn(`Rate limited (429). Waiting ${Math.round(delay/1000)}s before retry (attempt ${attempt + 1}/${maxRetries})...`);
+                                                      await new Promise(resolve => setTimeout(resolve, delay));
+                                                      continue;
+                                                  } else {
+                                                      throw new Error(`API Error ${response.status}: ${errorMessage}`);
+                                                  }
+                                              }
+
+                                              // Handle other status codes
+                                              if (!response.ok) {
+                                                  const errorText = await response.text();
+                                                  let errorData;
+                                                  try {
+                                                      errorData = JSON.parse(errorText);
+                                                  } catch {
+                                                      errorData = { error: { message: errorText } };
+                                                  }
+                                                  throw new Error(`API Error ${response.status}: ${errorData.error?.message || response.statusText}`);
+                                              }
+
+                                              return response;
+                                          } catch (err) {
+                                              lastError = err;
+                                              // If quota exhausted, don't retry
+                                              if (err.message && err.message.includes('Quota Exhausted')) {
+                                                  throw err;
+                                              }
+                                              // If it's the last attempt or not a retryable error, throw
+                                              if (attempt === maxRetries - 1) {
+                                                  throw err;
+                                              }
+                                          }
+                                      }
+                                  }
+
+                                  // Try each model configuration until one works
+                                  for (const config of modelConfigs) {
+                                      // If quota is exhausted, skip all models and use fallback
+                                      if (quotaExhausted) {
+                                          console.warn('Quota exhausted. Skipping remaining models.');
+                                          break;
+                                      }
+
                                       try {
-                                          const geminiResp = await fetch(geminiUrl, {
+                                          const geminiUrl = `https://generativelanguage.googleapis.com/${config.version}/models/${config.name}:generateContent?key=${apiKey}`;
+                                          console.log(`Trying model: ${config.name} (${config.version})`);
+                                          
+                                          const geminiResp = await fetchWithRetry(geminiUrl, {
                                               method: 'POST',
                                               headers: {
                                                   'Content-Type': 'application/json'
@@ -342,34 +479,86 @@
                                                   contents: [{ parts: [{ text: geminiPrompt }] }]
                                               })
                                           });
-                                          if (geminiResp.status === 429) {
-                                              if (attempt === maxAttempts) {
-                                                  aiSections = format;
-                                                  break;
+
+                                          const geminiData = await geminiResp.json();
+                                          
+                                          // Check if response has error
+                                          if (geminiData.error) {
+                                              const errorMessage = geminiData.error.message || 'Unknown API error';
+                                              console.error(`Error from ${config.name}:`, errorMessage);
+                                              
+                                              // Check if daily limit (RPD) reached for this model - try next model
+                                              if (isDailyLimitReached(errorMessage, config.name)) {
+                                                  console.warn(`${config.name} has reached its daily limit (RPD). Trying next model...`);
+                                                  lastError = new Error(`Daily limit reached for ${config.name}: ${errorMessage}`);
+                                                  continue; // Try next model
                                               }
-                                              const delay = baseDelayMs * Math.pow(2, attempt - 1);
-                                              await sleep(delay);
+                                              
+                                              // Check if overall quota exhausted (all models)
+                                              // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                              if (isQuotaExhausted(errorMessage)) {
+                                                  quotaExhausted = true;
+                                                  lastError = new Error(`Quota Exhausted: ${errorMessage}`);
+                                                  break; // Stop trying other models
+                                              }
+                                              
+                                              lastError = new Error(errorMessage);
+                                              continue; // Try next model
+                                          }
+
+                                          aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+                                          
+                                          if (aiSections) {
+                                              console.log(`Successfully used model: ${config.name}`);
+                                              break; // Success, exit loop
+                                          }
+                                      } catch (err) {
+                                          const errorMessage = err.message || '';
+                                          console.error(`Failed to use model ${config.name}:`, errorMessage);
+                                          
+                                          // Check if daily limit (RPD) reached for this model - try next model
+                                          if (isDailyLimitReached(errorMessage, config.name)) {
+                                              console.warn(`${config.name} has reached its daily limit (RPD). Trying next model...`);
+                                              lastError = err;
+                                              continue; // Try next model
+                                          }
+                                          
+                                          // Check if overall quota exhausted (all models)
+                                          // Note: This should only trigger for account-level quota issues, not model-specific RPD limits
+                                          if (isQuotaExhausted(errorMessage)) {
+                                              quotaExhausted = true;
+                                              lastError = err;
+                                              break; // Stop trying other models
+                                          }
+                                          
+                                          lastError = err;
+                                          
+                                          // If it's a 404, try next model
+                                          if (errorMessage.includes('404')) {
+                                              continue; // Try next model
+                                          }
+                                          
+                                          // For quota/rate limit errors (429), continue to next model
+                                          // This allows trying other models when one hits its limit
+                                          if (errorMessage.includes('429') || errorMessage.includes('quota')) {
                                               continue;
                                           }
-                                          if (!geminiResp.ok) {
-                                              aiSections = format;
-                                              break;
-                                          }
-                                          const geminiData = await geminiResp.json();
-                                          aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                                          break;
-                                      } catch (err) {
-                                          if (attempt === maxAttempts) {
-                                              aiSections = format;
-                                              break;
-                                          }
-                                          const delay = baseDelayMs * Math.pow(2, attempt - 1);
-                                          await sleep(delay);
                                       }
                                   }
+
+                                  // If all models failed, return format and log error
                                   if (!aiSections) {
-                                      aiSections = format;
+                                      if (quotaExhausted) {
+                                          console.error('Gemini API quota exhausted. Please check your API quota and billing settings:');
+                                          console.error('https://ai.dev/usage?tab=rate-limit');
+                                          console.error('Falling back to manual format template');
+                                      } else {
+                                          console.error('All Gemini API models failed. Last error:', lastError?.message || 'Unknown error');
+                                          console.error('Falling back to manual format template');
+                                      }
+                                      return format;
                                   }
+
                                   return aiSections;
                     }
                     let selected = bugFixTemplateSelect.options[bugFixTemplateSelect.selectedIndex];
