@@ -24,7 +24,8 @@ Version 1.3.2
 - Enhanced error handling and user feedback
 - Token input field automatically shows/hides based on AI toggle state
 - Steps to Verify bug fix and all other fields are now populating properly
-- Added Reporting Template for Creating new bugs.
+- Added Reporting Template for Creating new bugs
+- **New Raise Wiki Template**: AI-powered template for creating wiki documentation tickets with automatic URL and step extraction
 - Resolved issues in Needs Info Template and Removed "Please Raise a New Ticket if issue persists".
 
 Version 1.3.1
@@ -135,11 +136,89 @@ The extension has been completely redesigned with a contemporary look and feel:
 
 Once installed, the extension automatically integrates with Bugzilla pages. You'll see:
 
-1. **Template Dropdown**: Select from various bug fix templates (Reporting, Bug Fix, Confirmation, Verification, etc.)
+1. **Template Dropdown**: Select from 11 bug fix templates in the following order:
+   - Select template (placeholder)
+   - Reporting (AI-powered)
+   - Bug Fix (Bitbucket integration)
+   - Company Update (Manual)
+   - Release (Manual)
+   - Bug Invalid (Manual)
+   - No Response (Manual)
+   - Needs Info (Manual)
+   - Raise Wiki (AI-powered)
+   - Wiki Review (Manual)
+   - Confirmation (AI-powered)
+   - Verification (AI-powered)
 2. **AI Toggle**: Switch between AI mode (default) and Manual mode
 3. **Status Indicator**: Shows current mode ("AIMode" or "ManualMode")
 4. **API Key Input**: Enter your Gemini API key when AI mode is enabled
-5. **Smart Templates**: AI-powered content generation for confirmation and verification templates
+5. **Smart Templates**: AI-powered content generation for confirmation, verification, bug reporting, and wiki templates
+
+### Available Templates:
+
+#### 🤖 AI-Powered Templates (Require Gemini API Key):
+1. **Reporting**: Create new bug reports with environment details, step extraction, and AI-generated summaries
+   - Automated URL extraction and formatting
+   - Environment details auto-population
+   - Build date and hardware tracking
+   - Multi-platform support detection
+
+2. **Confirmation**: AI-assisted bug confirmation templates
+   - Smart URL extraction (production, backup, staging)
+   - Auto-generated reproduction steps
+   - Environment details formatting
+   - Product-specific templates (Mobile App/Web)
+
+3. **Verification**: Bug fix verification with positive/negative test cases
+   - Impact area detection
+   - Step verification generation
+   - Positive and negative case testing
+   - Environment validation details
+
+4. **Raise Wiki**: Create wiki documentation tickets with AI-powered content generation
+   - Wiki page link suggestions
+   - One-liner implementation summary
+   - Prerequisite/configuration steps extraction
+   - Impacted areas identification
+   - Test case and attachment links
+   - Reference ticket tracking
+
+#### 📝 Manual Templates (No AI Required):
+5. **Bug Fix**: Generate bug fix templates with PR and commit information
+   - Automatic PR and commit ID extraction from Bitbucket
+   - Branch name detection
+   - Root cause analysis section
+   - Testing details template
+
+6. **Wiki Review**: Review and verify wiki documentation
+   - Automatic wiki URL detection
+   - Review confirmation template
+   - Smart wiki link extraction from comments
+
+7. **Release**: Product release announcements
+   - Date auto-population (day, month, year)
+   - Product-specific versions (Mobile App/Web/Next)
+   - Release version tracking
+
+8. **Company Update**: Company update notifications
+   - Simple update confirmation template
+   - Commit reference support
+
+9. **Bug Invalid**: Mark invalid bug reports
+   - URL extraction and formatting
+   - Automatic bizom URL detection
+   - Staging URL generation from production
+   - Closure confirmation template
+
+10. **No Response**: Handle unresponsive bug reports
+    - Closure justification template
+    - Summary integration
+    - Re-raise instruction message
+
+11. **Needs Info**: Request additional information for bug resolution
+    - Bug guideline document links
+    - Information requirements listing
+    - Standard response template
 
 ### How to Use:
 1. Navigate to any Bugzilla bug page
@@ -148,6 +227,40 @@ Once installed, the extension automatically integrates with Bugzilla pages. You'
 4. Enter your Gemini API key if using AI mode
 5. Select a template from the dropdown
 6. The textarea will be automatically filled with the appropriate template
+
+### Template Features in Detail:
+
+#### 🔍 Smart Extraction Capabilities:
+All AI-powered templates include intelligent data extraction:
+- **URL Parsing**: Automatically detects production, staging, and backup bizom URLs from comments
+- **Staging URL Generation**: Converts production URLs to staging equivalents
+- **Step Detection**: Pulls "Steps to Reproduce" from existing bug comments
+- **Summary Integration**: Extracts bug summaries and descriptions
+- **Environment Detection**: Identifies Dev/Staging/Live environments
+- **Product/Component Awareness**: Adapts templates based on selected product and component
+
+#### 📋 Bug Fix Template (Manual):
+This template is unique as it integrates with Bitbucket API:
+- **PR Detection**: Automatically fetches Pull Request information from Bitbucket
+- **Commit Tracking**: Extracts commit IDs associated with bug fixes
+- **Branch Identification**: Captures source branch names
+- **Error Handling**: Graceful fallback when API calls fail
+- **Template Structure**: Includes Root Cause, Fix Description, Testing Details, and Impact sections
+
+#### 🔄 Toggle Functionality:
+The AI Toggle switch provides flexibility:
+- **AI Mode (Default)**: Uses Gemini API for intelligent content generation
+- **Manual Mode**: Quick template generation without AI processing
+- **Dynamic UI**: Token input appears/disappears based on toggle state
+- **State Persistence**: Toggle state is visually indicated
+- **Status Indicator**: Shows "AIMode" or "ManualMode" in real-time
+
+#### 🎯 Page Compatibility:
+The extension works on multiple Bugzilla page types:
+- Bug detail pages
+- Bug creation pages (Mobile App, BizomWeb, Internal Tools)
+- Bug list pages for bulk operations
+- Comment sections with dynamic state checking
 
 Folder Structure
 your-extension/
@@ -161,12 +274,37 @@ your-extension/
 ├── icons/                # Extension icons
 └── README.md             # You're here!
 
+## Technical Implementation
+
+### Key Components:
+- **Content Script**: Injects UI elements and handles template generation logic
+- **Storage API**: Stores user credentials, API keys, and configuration
+- **Bitbucket API Integration**: Fetches PR and commit information
+- **Gemini AI API**: Powers intelligent template generation
+- **DOM Manipulation**: Dynamic element injection and state management
+
+### APIs Used:
+- **Chrome Storage API**: Local storage for user data persistence
+- **Bitbucket REST API**: Pull Request and commit data
+- **Gemini 2.0 Flash API**: AI-powered content generation
+- **Chrome Extensions API**: Active tab and host permissions
+
+### Data Flow:
+1. User selects template from dropdown
+2. Extension extracts relevant data from page and comments
+3. If AI enabled: Sends extracted data to Gemini API
+4. AI processes and returns formatted content
+5. Template is populated in textarea
+6. If Manual mode: Static template is populated directly
+
 Development
 To modify or enhance the extension:
 
 Make changes in the appropriate HTML, JS, or CSS files
 
 Reload the extension in chrome://extensions/ by clicking the refresh icon
+
+Test changes by navigating to bugzilla.bizom.in pages
 
 License
 feel free to use and modify this extension.

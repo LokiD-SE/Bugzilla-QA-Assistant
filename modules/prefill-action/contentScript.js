@@ -278,7 +278,7 @@
 
                                   Hi Team,
 
-                                  ** Suggested Wiki Page **
+                                  ** Suggested Wiki Page Link **
 
                                   ** One Liner of Implementation **
 
@@ -290,6 +290,8 @@
                                   Admin:
                                   User:
                                   Branch/version:
+
+                                  ** Implemented On **
 
                                   ** Detailed Summary **
 
@@ -304,11 +306,13 @@
                                   ---
 
                                   Guidelines:
-                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page **, ** One Liner of Implementation **).
+                                  - Do NOT alter or rename any headings (e.g., ** Suggested Wiki Page Link **, ** One Liner of Implementation **).
+                                  - Suggested Wiki Page Link Heading should have any wiki links suggested.
                                   - One Liner of Implementation Heading should have the one liner of the bug that is reported.
                                   - Keep section spacing and layout exactly as shown.
                                   - Add related information to all the headings and generate information for each heading.
                                   - Always include URL credentials and branch/version under "Environment Details".
+                                  - Implemented On: Mention the implemented on with following values given here, The implemented on can have multiple values separated by comma - Web/App/Bourbon Anroid/BizomNext Android/IOS.
                                   - Remove any leading text like “Okay, here's a simplified explanation…” from the response.
                                   - Always start with “Hi Team,” and end with “Please contact me for any queries.
                                   - Detailed Summary: More detailed restatement of summary
@@ -324,23 +328,46 @@
 
                                   let geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
                                   let aiSections = '';
-                                  try {
-                                      const geminiResp = await fetch(geminiUrl, {
-                                          method: 'POST',
-                                          headers: {
-                                              'Content-Type': 'application/json'
-                                          },
-                                          body: JSON.stringify({
-                                              contents: [{ parts: [{ text: geminiPrompt }] }]
-                                          })
-                                      });
-                                      if (geminiResp.ok) {
+                                  const maxAttempts = 5;
+                                  const baseDelayMs = 1000;
+                                  const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+                                  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+                                      try {
+                                          const geminiResp = await fetch(geminiUrl, {
+                                              method: 'POST',
+                                              headers: {
+                                                  'Content-Type': 'application/json'
+                                              },
+                                              body: JSON.stringify({
+                                                  contents: [{ parts: [{ text: geminiPrompt }] }]
+                                              })
+                                          });
+                                          if (geminiResp.status === 429) {
+                                              if (attempt === maxAttempts) {
+                                                  aiSections = format;
+                                                  break;
+                                              }
+                                              const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                                              await sleep(delay);
+                                              continue;
+                                          }
+                                          if (!geminiResp.ok) {
+                                              aiSections = format;
+                                              break;
+                                          }
                                           const geminiData = await geminiResp.json();
                                           aiSections = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-                                      } else {
-                                          aiSections = format;
+                                          break;
+                                      } catch (err) {
+                                          if (attempt === maxAttempts) {
+                                              aiSections = format;
+                                              break;
+                                          }
+                                          const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                                          await sleep(delay);
                                       }
-                                  } catch (err) {
+                                  }
+                                  if (!aiSections) {
                                       aiSections = format;
                                   }
                                   return aiSections;
@@ -867,7 +894,7 @@
                             combinedText += "\n\n--- Extracted Steps ---\n" + allSteps.join('\n');
                             console.log(combinedText);
                             // === Generate Summary & Set TextArea ===
-                            format = `Hi Team,\n\n** Suggested Wiki Page **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch/version:\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
+                            format = `Hi Team,\n\n** Suggested Wiki Page Link **\n\n** One Liner of Implementation **\n${summary}\n\n** Prerequisite/Configuration Steps **\n\n** Environment Details **\nURL:${formattedUrls}\nAdmin:\nUser:\nBranch:\nAPP Link/Version:\n\n** Implemented On **\n\n** Detailed Summary **\n\n** Impacted areas **\n\n** Test case and Attachment links: **\n\n** Reference Ticket link: **\n\n**\n\n\nPlease contact me for any queries.`;
                             if(isAiEnabled === true)
                             {
                               generateAISummary(format, combinedText, apiKey, formattedUrls, "bugRaiseWiki").then(summary => {
